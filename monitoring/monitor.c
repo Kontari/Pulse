@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#include <ncurses.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -52,10 +54,14 @@ int get_process_count(void) {
     int process_count = 0;
     struct dirent *open;
     DIR *dirp;
-
     if((dirp = opendir("/proc")) < 0) frick("Failed to open /proc while reading process count");
-    while((open = readdir(dirp)) != NULL) if(open->d_type == DT_DIR && strcmp(open->d_name, ".") != 0 && strcmp(open->d_name, "..") != 0) process_count++;
-    return (process_count - 11);    // There are 11 non-process directories in /proc
+
+    /* Match directory names to numbers in order to count processes. This is probably a terrible way to do it but it's system-agnostic. */
+    while((open = readdir(dirp)) != NULL) if(open->d_type == DT_DIR && (strncmp(open->d_name, "0", 1) == 0 || strncmp(open->d_name, "1", 1) == 0 || 
+        strncmp(open->d_name, "2", 1) == 0 || strncmp(open->d_name, "3", 1) == 0 || strncmp(open->d_name, "4", 1) == 0 || strncmp(open->d_name, "5", 1) == 0 ||
+        strncmp(open->d_name, "6", 1) == 0 || strncmp(open->d_name, "7", 1) == 0 || strncmp(open->d_name, "8", 1) == 0 || strncmp(open->d_name, "9", 1) == 0)) process_count++;
+
+    return process_count;
 }
 
 /* This guy reads the current disk I/O from /proc/diskstats */
@@ -94,9 +100,18 @@ struct loadavgs get_loadavg(void) {
 }
 
 int main(void) {
-    struct loadavgs loadavgs = get_loadavg();
-    printf("Load averages:\t%.2f %.2f %.2f\n", loadavgs.min1_avg, loadavgs.min5_avg, loadavgs.min15_avg);
-    printf("Disk I/O:\t%d\n", get_disk_io());
-    printf("Process count:\t%d\n", get_process_count());
+    initscr();  // Begin curses mode
+    for(;;) {
+        clear();
+        struct loadavgs loadavgs = get_loadavg();
+        printw("Load averages:\t%.2f %.2f %.2f\n", loadavgs.min1_avg, loadavgs.min5_avg, loadavgs.min15_avg);
+        printw("Disk I/O:\t%d\n", get_disk_io());
+        printw("Process count:\t%d\n", get_process_count());
+        refresh();
+        sleep(3);   // Wait 3 seconds before refreshing values
+    }
+
+    /* Considering that these will never run, this program probably has a memory leak */
+    endwin();   // Free the memory allocated by ncurses
     exit(0);
 }
