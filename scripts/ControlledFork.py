@@ -44,6 +44,9 @@ def check(params):  # Checks either cpu, virtual memory, both, or either
 
     else:  # If things broke or input was put incorrectly
         print("Sorry that input didn't work right.")
+        for proc in psutil.process_iter(): # makes sure all forks are killed
+                if proc.name() == 'python.exe':
+                    proc.kill()
         exit()  # Exit the program
 
 
