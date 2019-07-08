@@ -16,7 +16,7 @@ def check(params):  # Checks either cpu, virtual memory, both, or either
             return False  # if its not above 95% return false to keep going
 
     elif params == "cpu":  # check cpu only
-        if psutil.cpu_percent() > 95:  # if usage is above 95%
+        if psutil.cpu_percent(interval=1.0) > 95:  # if usage is above 95%
             for proc in psutil.process_iter():
                 if proc.name() == 'python.exe':
                     proc.kill()
@@ -25,7 +25,7 @@ def check(params):  # Checks either cpu, virtual memory, both, or either
             return False
 
     elif params == "either":  # checks if either cpu or virtual memory is above 95%
-        if psutil.cpu_percent() > 95 or psutil.virtual_memory().percent > 95:
+        if psutil.cpu_percent(interval=1.0) > 95 or psutil.virtual_memory().percent > 95:
             for proc in psutil.process_iter():
                 if proc.name() == 'python.exe':
                     proc.kill()
@@ -34,7 +34,7 @@ def check(params):  # Checks either cpu, virtual memory, both, or either
             return False
 
     elif params == "both":  # Checks if both cpu and virtual memory are above 95%
-        if psutil.cpu_percent() > 95 and psutil.virtual_memory().percent > 95:
+        if psutil.cpu_percent(interval=1.0) > 95 and psutil.virtual_memory().percent > 95:
             for proc in psutil.process_iter():
                 if proc.name() == 'python.exe':
                     proc.kill()
