@@ -15,10 +15,29 @@ struct loadavgs {
     float min15_avg;
 };
 
+/* Handy-dandy structure containing info on total, free, and
+available memory in kilobytes */
+struct meminfo {
+    unsigned int memtotal;
+    unsigned int memfree;
+    unsigned int memavailable;
+};
+
 /* Standard error function because I'm lazy */
 void frick(char *msg) {
     fputs(msg, stderr);
     exit(-1);
+}
+
+/*This guy returns information on the system's total, free, and available memory
+from /proc/meminfo in a handy-dandy structure */
+struct meminfo get_meminfo(void) {
+    struct meminfo meminfo;
+    FILE *fp = fopen("/proc/meminfo", "r");
+
+    fscanf(fp, "%*s %d %*s %*s %d %*s %*s %d", &meminfo.memtotal, &meminfo.memfree, &meminfo.memavailable);
+    fclose(fp);
+    return meminfo;
 }
 
 /* This guy returns the major and minor number of the device
@@ -101,10 +120,14 @@ struct loadavgs get_loadavg(void) {
 
 int main(void) {
     initscr();  // Begin curses mode
+    struct loadavgs loadavgs;
+    struct meminfo meminfo;
     for(;;) {
         clear();
-        struct loadavgs loadavgs = get_loadavg();
-        printw("Load averages:\t%.2f %.2f %.2f\n", loadavgs.min1_avg, loadavgs.min5_avg, loadavgs.min15_avg);
+        loadavgs = get_loadavg();
+        meminfo = get_meminfo();
+        printw("Load averages:\t%.2f, %.2f, %.2f\n", loadavgs.min1_avg, loadavgs.min5_avg, loadavgs.min15_avg);
+        printw("Memory Info:\t%d Mb Total, %d Mb Free, %d Mb Available\n", meminfo.memtotal/1000, meminfo.memfree/1000, meminfo.memavailable/1000);
         printw("Disk I/O:\t%d\n", get_disk_io());
         printw("Process count:\t%d\n", get_process_count());
         refresh();
